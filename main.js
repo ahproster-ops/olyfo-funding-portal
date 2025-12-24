@@ -1,8 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Using Supabase CDN (loaded in HTML)
+const supabaseUrl = 'https://bburcntnotjmkifveivv.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJidXJjbnRub3RqbWtpZnZlaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUwNTIwNDgsImV4cCI6MjA1MDYyODA0OH0.dtxNxmKsOUo52vBHiFH1JDzABLWmCMFXJo3C0XGqBno'
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
 
 let currentUser = null
 let operationsChart = null
@@ -146,6 +145,9 @@ window.showAddOperation = () => {
 
 window.saveModal = async () => {
     const date = document.getElementById('op-date')?.value
+    const title = document.getElementById('task-title')?.value
+    const name = document.getElementById('doc-name')?.value
+    
     if (date) {
         await supabase.from('operations').insert({
             date,
@@ -157,6 +159,26 @@ window.saveModal = async () => {
         })
         closeModal()
         loadOperations()
+    } else if (title) {
+        await supabase.from('tasks').insert({
+            title,
+            description: document.getElementById('task-desc').value,
+            due_date: document.getElementById('task-due').value,
+            status: document.getElementById('task-status').value,
+            user_id: currentUser.id
+        })
+        closeModal()
+        loadTasks()
+    } else if (name) {
+        await supabase.from('documents').insert({
+            name,
+            type: document.getElementById('doc-type').value,
+            file_url: document.getElementById('doc-url').value,
+            uploaded_date: document.getElementById('doc-date').value,
+            user_id: currentUser.id
+        })
+        closeModal()
+        loadDocuments()
     }
 }
 
@@ -210,21 +232,6 @@ window.showAddTask = () => {
     document.getElementById('modal').classList.add('flex')
 }
 
-window.saveModal = async () => {
-    const title = document.getElementById('task-title')?.value
-    if (title) {
-        await supabase.from('tasks').insert({
-            title,
-            description: document.getElementById('task-desc').value,
-            due_date: document.getElementById('task-due').value,
-            status: document.getElementById('task-status').value,
-            user_id: currentUser.id
-        })
-        closeModal()
-        loadTasks()
-    }
-}
-
 window.deleteTask = async (id) => {
     if (confirm('Delete this task?')) {
         await supabase.from('tasks').delete().eq('id', id)
@@ -267,21 +274,6 @@ window.showAddDocument = () => {
     `
     document.getElementById('modal').classList.remove('hidden')
     document.getElementById('modal').classList.add('flex')
-}
-
-window.saveModal = async () => {
-    const name = document.getElementById('doc-name')?.value
-    if (name) {
-        await supabase.from('documents').insert({
-            name,
-            type: document.getElementById('doc-type').value,
-            file_url: document.getElementById('doc-url').value,
-            uploaded_date: document.getElementById('doc-date').value,
-            user_id: currentUser.id
-        })
-        closeModal()
-        loadDocuments()
-    }
 }
 
 window.deleteDocument = async (id) => {
