@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - OLYFO Funding Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-2xl font-bold text-blue-600">OLYFO</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="dashboard.html" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Dashboard</a>
+                        <a href="calculator.html" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Calculator</a>
+                        <a href="operations.html" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Operations</a>
+                        <a href="tasks.html" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Tasks</a>
+                        <a href="documents.html" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Documents</a>
+                        <a href="admin.html" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Admin</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-1">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total Operations</dt>
+                                <dd class="mt-1 text-3xl font-semibold text-gray-900" id="total-operations">0</dd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-1">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Pending Tasks</dt>
+                                <dd class="mt-1 text-3xl font-semibold text-gray-900" id="pending-tasks">0</dd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-1">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total Documents</dt>
+                                <dd class="mt-1 text-3xl font-semibold text-gray-900" id="total-documents">0</dd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-1">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Active Users</dt>
+                                <dd class="mt-1 text-3xl font-semibold text-gray-900" id="active-users">1</dd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Operations</h3>
+                </div>
+                <div class="border-t border-gray-200">
+                    <ul id="recent-operations" class="divide-y divide-gray-200">
+                        <li class="px-4 py-4">
+                            <p class="text-gray-500">No operations yet</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    <script>
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const { data: operations } = await supabase.from('operations').select('*');
+                const { data: tasks } = await supabase.from('tasks').select('*');
+                const { data: documents } = await supabase.from('documents').select('*');
+                
+                document.getElementById('total-operations').textContent = operations?.length || 0;
+                document.getElementById('pending-tasks').textContent = tasks?.filter(t => t.status === 'pending').length || 0;
+                document.getElementById('total-documents').textContent = documents?.length || 0;
+                
+                // Display recent operations
+                if (operations && operations.length > 0) {
+                    const recentOps = operations.slice(-5).reverse();
+                    const html = recentOps.map(op => `
+                        <li class="px-4 py-4">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm font-medium text-gray-900">${op.name}</p>
+                                <p class="text-sm text-gray-500">${new Date(op.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">Type: ${op.type}</p>
+                        </li>
+                    `).join('');
+                    document.getElementById('recent-operations').innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+        
+        checkAuth();
+        loadDashboardData();
+    </script>
+</body>
+</html>
